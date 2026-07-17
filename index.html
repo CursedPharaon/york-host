@@ -101,7 +101,7 @@
         }
     }
 
-    // ========== СОЗДАНИЕ СЕРВЕРА (с получением ID) ==========
+    // ========== СОЗДАНИЕ СЕРВЕРА ==========
     async function createServer() {
         const name = document.getElementById('serverName').value.trim();
         const admin = document.getElementById('adminNick').value.trim();
@@ -118,15 +118,12 @@
         }
         
         try {
-            // Вставляем сервер
+            // Вставляем сервер с явным ID (время + рандом)
+            const newId = Date.now() + Math.floor(Math.random() * 1000);
             await tursoQuery(
-                "INSERT INTO servers (name, admin, size, wipe_days, tariff) VALUES (?, ?, ?, ?, ?)",
-                [name, admin, size, wipe, size >= 200 ? 'premium' : size >= 150 ? 'standard' : 'free']
+                "INSERT INTO servers (id, name, admin, size, wipe_days, tariff) VALUES (?, ?, ?, ?, ?, ?)",
+                [newId, name, admin, size, wipe, size >= 200 ? 'premium' : size >= 150 ? 'standard' : 'free']
             );
-            
-            // Получаем последний ID
-            const idResult = await tursoQuery("SELECT last_insert_rowid()");
-            const newId = idResult.rows?.[0]?.[0] || 'не удалось получить ID';
             
             msg.className = 'success';
             msg.textContent = `✅ Сервер «${name}» создан! ID: ${newId}`;
