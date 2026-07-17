@@ -196,14 +196,34 @@
 </div>
 
 <script>
-    // ==================== НАСТРОЙКИ ====================
-    const API_URL = 'https://york-server.onrender.com';
+    // ========== ПРЯМОЕ ПОДКЛЮЧЕНИЕ К TURSO ==========
+    const TURSO_URL = "https://york-cursedd.aws-eu-west-1.turso.io/v1/execute";
+    const TURSO_TOKEN = "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJpYXQiOjE3ODQzMTk3MjksImlkIjoiMDE5ZjZmNzgtZGEwMS03ZmMwLThjNzgtOWUwNTIxYzdjMGIyIiwia2lkIjoicWpYbEhLbElGQmJNX29uRDlaWEkyWFVfazVBT3h3X3JIMF9TcUZ6MmU0ZyIsInJpZCI6ImRhMmVhODNiLTM0NTYtNDYwNy1iMmJiLTFmNWY1NWM0MDFhMiJ9.iUoQ29p0S3GtFyFwYhz925NtgbelgmJAdMkFXqC_Yap_r2P7K35YZiTqSQ-iPRW_Tpw5hiU03q7ZbVmqRxxZDg";
 
+    async function tursoQuery(sql, params = []) {
+        try {
+            const resp = await fetch(TURSO_URL, {
+                method: 'POST',
+                headers: {
+                    'Authorization': 'Bearer ' + TURSO_TOKEN,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ sql, args: params })
+            });
+            const data = await resp.json();
+            return data.result || { rows: [] };
+        } catch (e) {
+            console.error('Turso ошибка:', e);
+            return { rows: [] };
+        }
+    }
+
+    // ========== ВСЁ ОСТАЛЬНОЕ ==========
     let currentUser = null;
     let servers = [];
     let currentTariff = null;
 
-    // ==================== ВХОД ====================
+    // ========== ВХОД ==========
     async function login() {
         const username = document.getElementById('loginUsername').value.trim();
         const password = document.getElementById('loginPassword').value.trim();
@@ -211,23 +231,15 @@
             showLoginError('Заполните все поля');
             return;
         }
-        try {
-            const resp = await fetch(API_URL + '/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username, password })
-            });
-            const data = await resp.json();
-            if (data.success) {
-                currentUser = data.user;
-                localStorage.setItem('york_hosting_user', JSON.stringify(currentUser));
-                showDashboard();
-            } else {
-                showLoginError(data.error || 'Ошибка входа');
-            }
-        } catch (e) {
-            showLoginError('Сервер недоступен');
+        const hashed = await sha256(password);
+        const result = await tursoQuery("SELECT username, password, balance FROM hosting_users WHERE username=?", [username]);
+        if (!result.rows || result.rows.length === 0 || result.rows[0][1] !== hashed) {
+            showLoginError('Неверный логин или пароль');
+            return;
         }
+        currentUser = { username, balance: result.rows[0][2] || 0 };
+        localStorage.setItem('york_hosting_user', JSON.stringify(currentUser));
+        showDashboard();
     }
 
     async function register() {
@@ -237,21 +249,14 @@
             showLoginError('Заполните все поля');
             return;
         }
-        try {
-            const resp = await fetch(API_URL + '/register', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username, password })
-            });
-            const data = await resp.json();
-            if (data.success) {
-                showLoginError('✅ Регистрация успешна! Теперь войдите.', 'green');
-            } else {
-                showLoginError(data.error || 'Ошибка регистрации');
-            }
-        } catch (e) {
-            showLoginError('Сервер недоступен');
+        const check = await tursoQuery("SELECT username FROM hosting_users WHERE username=?", [username]);
+        if (check.rows && check.rows.length > 0) {
+            showLoginError('Пользователь уже существует');
+            return;
         }
+        const hashed = await sha256(password);
+        await tursoQuery("INSERT INTO hosting_users (username, password, balance) VALUES (?, ?, 0)", [username, hashed]);
+        showLoginError('✅ Зарегистрирован! Теперь войдите.', 'green');
     }
 
     function showLoginError(msg, color = '#c44') {
@@ -275,7 +280,6 @@
         document.getElementById('header').classList.add('hidden');
     }
 
-    // ==================== ДАШБОРД ====================
     function showDashboard() {
         document.getElementById('loginPage').classList.add('hidden');
         document.getElementById('dashboard').classList.remove('hidden');
@@ -302,23 +306,25 @@
         if (tab === 'console') loadConsole();
     }
 
-    // ==================== СЕРВЕРА ====================
+    // ========== СЕРВЕРА ==========
     async function loadServers() {
-        try {
-            const resp = await fetch(API_URL + '/get_servers', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ user_id: currentUser.id })
-            });
-            const data = await resp.json();
-            if (data.success) {
-                servers = data.servers;
-                renderServers();
-                updateConsoleSelect();
+        const result = await tursoQuery("SELECT id, server_name, admin_nick, map_size, wipe_days, tariff, status FROM hosting_servers WHERE user_id=(SELECT id FROM hosting_users WHERE username=?)", [currentUser.username]);
+        servers = [];
+        if (result.rows) {
+            for (const row of result.rows) {
+                servers.push({
+                    id: row[0],
+                    name: row[1],
+                    admin: row[2],
+                    size: row[3],
+                    wipe: row[4],
+                    tariff: row[5],
+                    status: row[6]
+                });
             }
-        } catch (e) {
-            console.error('Ошибка загрузки серверов:', e);
         }
+        renderServers();
+        updateConsoleSelect();
     }
 
     function renderServers() {
@@ -365,13 +371,14 @@
         const server = servers.find(s => s.id === id);
         if (!server) return;
         const newStatus = server.status === 'online' ? 'offline' : 'online';
-        // В реальности здесь нужно отправить запрос на сервер
+        await tursoQuery("UPDATE hosting_servers SET status=? WHERE id=?", [newStatus, id]);
         server.status = newStatus;
         renderServers();
     }
 
     async function deleteServer(id) {
         if (!confirm('Удалить сервер? Все данные будут потеряны.')) return;
+        await tursoQuery("DELETE FROM hosting_servers WHERE id=?", [id]);
         servers = servers.filter(s => s.id !== id);
         renderServers();
         updateConsoleSelect();
@@ -386,7 +393,7 @@
         loadConsole();
     }
 
-    // ==================== КОНСОЛЬ ====================
+    // ========== КОНСОЛЬ ==========
     function updateConsoleSelect() {
         const select = document.getElementById('consoleServerSelect');
         select.innerHTML = servers.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
@@ -444,7 +451,7 @@
         }
     }
 
-    // ==================== СОЗДАНИЕ СЕРВЕРА ====================
+    // ========== СОЗДАНИЕ СЕРВЕРА ==========
     function showCreateForm(tariff) {
         currentTariff = tariff;
         const names = { free: 'Бесплатный', standard: 'Стандарт', premium: 'Премиум' };
@@ -467,36 +474,64 @@
             document.getElementById('createError').textContent = 'Заполните все поля';
             return;
         }
-        try {
-            const resp = await fetch(API_URL + '/create_server', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    user_id: currentUser.id,
-                    server_name: name,
-                    admin_nick: admin,
-                    tariff: currentTariff
-                })
-            });
-            const result = await resp.json();
-            if (result.success) {
-                closeModal('createModal');
-                await loadServers();
-                alert(`✅ Сервер «${name}» создан!\nСсылка: https://york-game.onrender.com/play?server=${result.server_id}`);
-            } else {
-                document.getElementById('createError').textContent = result.error || 'Ошибка создания';
+        const configs = {
+            free: { size: 40, wipe: 7, price: 0 },
+            standard: { size: 150, wipe: 30, price: 79 },
+            premium: { size: 250, wipe: 0, price: 199 }
+        };
+        const config = configs[currentTariff];
+        
+        // Проверяем баланс
+        const userResult = await tursoQuery("SELECT balance FROM hosting_users WHERE username=?", [currentUser.username]);
+        if (userResult.rows && userResult.rows.length > 0) {
+            const balance = userResult.rows[0][0] || 0;
+            if (balance < config.price) {
+                document.getElementById('createError').textContent = `Недостаточно средств. Нужно ${config.price} ₽`;
+                return;
             }
-        } catch (e) {
-            document.getElementById('createError').textContent = 'Сервер недоступен';
+            // Списываем деньги
+            await tursoQuery("UPDATE hosting_users SET balance = balance - ? WHERE username=?", [config.price, currentUser.username]);
+            currentUser.balance = balance - config.price;
+            document.getElementById('balanceDisplay').textContent = currentUser.balance;
         }
+        
+        // Создаём сервер в базе
+        const userResult2 = await tursoQuery("SELECT id FROM hosting_users WHERE username=?", [currentUser.username]);
+        const userId = userResult2.rows[0][0];
+        await tursoQuery("INSERT INTO hosting_servers (user_id, server_name, admin_nick, map_size, wipe_days, tariff, status) VALUES (?, ?, ?, ?, ?, ?, 'online')", 
+            [userId, name, admin, config.size, config.wipe, currentTariff]);
+        
+        // Добавляем в локальный список
+        const newServer = {
+            id: Date.now(),
+            name: name,
+            admin: admin,
+            size: config.size,
+            wipe: config.wipe,
+            tariff: currentTariff,
+            status: 'online'
+        };
+        servers.push(newServer);
+        closeModal('createModal');
+        renderServers();
+        updateConsoleSelect();
+        alert(`✅ Сервер «${name}» создан!\nРазмер: ${config.size}x${config.size}\nВайп: ${config.wipe === 0 ? 'без вайпа' : config.wipe + ' дней'}`);
     }
 
-    // ==================== МОДАЛКИ ====================
+    // ========== МОДАЛКИ ==========
     function closeModal(id) {
         document.getElementById(id).classList.remove('active');
     }
 
-    // ==================== ИНИЦИАЛИЗАЦИЯ ====================
+    // ========== SHA-256 ==========
+    async function sha256(message) {
+        const msgBuffer = new TextEncoder().encode(message);
+        const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    // ========== ИНИЦИАЛИЗАЦИЯ ==========
     const savedUser = localStorage.getItem('york_hosting_user');
     if (savedUser) {
         currentUser = JSON.parse(savedUser);
