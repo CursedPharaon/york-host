@@ -218,12 +218,20 @@
         }
     }
 
+    // ========== SHA-256 ==========
+    async function sha256(message) {
+        const msgBuffer = new TextEncoder().encode(message);
+        const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
     // ========== ВСЁ ОСТАЛЬНОЕ ==========
     let currentUser = null;
     let servers = [];
     let currentTariff = null;
 
-    // ========== ВХОД ==========
+    // ========== ВХОД (используем таблицу players из игры) ==========
     async function login() {
         const username = document.getElementById('loginUsername').value.trim();
         const password = document.getElementById('loginPassword').value.trim();
@@ -231,17 +239,37 @@
             showLoginError('Заполните все поля');
             return;
         }
-        const hashed = await sha256(password);
-        const result = await tursoQuery("SELECT username, password, balance FROM hosting_users WHERE username=?", [username]);
-        if (!result.rows || result.rows.length === 0 || result.rows[0][1] !== hashed) {
-            showLoginError('Неверный логин или пароль');
-            return;
+        try {
+            const hashed = await sha256(password);
+            const result = await tursoQuery("SELECT username, password, is_admin FROM players WHERE username=?", [username]);
+            if (!result.rows || result.rows.length === 0) {
+                showLoginError('Пользователь не найден');
+                return;
+            }
+            if (result.rows[0][1] !== hashed) {
+                showLoginError('Неверный логин или пароль');
+                return;
+            }
+            // Проверяем баланс в hosting_users (если нет — создаём)
+            const balanceCheck = await tursoQuery("SELECT balance FROM hosting_users WHERE username=?", [username]);
+            let balance = 0;
+            if (balanceCheck.rows && balanceCheck.rows.length > 0) {
+                balance = balanceCheck.rows[0][0] || 0;
+            } else {
+                // Создаём запись с балансом 0
+                await tursoQuery("INSERT INTO hosting_users (username, password, balance) VALUES (?, ?, 0)", [username, hashed]);
+                balance = 0;
+            }
+            currentUser = { username, balance };
+            localStorage.setItem('york_hosting_user', JSON.stringify(currentUser));
+            showDashboard();
+        } catch (e) {
+            console.error('Ошибка входа:', e);
+            showLoginError('Ошибка сервера');
         }
-        currentUser = { username, balance: result.rows[0][2] || 0 };
-        localStorage.setItem('york_hosting_user', JSON.stringify(currentUser));
-        showDashboard();
     }
 
+    // ========== РЕГИСТРАЦИЯ (создаём в players и в hosting_users) ==========
     async function register() {
         const username = document.getElementById('loginUsername').value.trim();
         const password = document.getElementById('loginPassword').value.trim();
@@ -249,14 +277,25 @@
             showLoginError('Заполните все поля');
             return;
         }
-        const check = await tursoQuery("SELECT username FROM hosting_users WHERE username=?", [username]);
-        if (check.rows && check.rows.length > 0) {
-            showLoginError('Пользователь уже существует');
-            return;
+        try {
+            // Проверяем в players
+            const check = await tursoQuery("SELECT username FROM players WHERE username=?", [username]);
+            if (check.rows && check.rows.length > 0) {
+                showLoginError('Пользователь уже существует');
+                return;
+            }
+            const hashed = await sha256(password);
+            // Создаём в players (как в игре)
+            await tursoQuery("INSERT INTO players (username, password, is_admin) VALUES (?, ?, 0)", [username, hashed]);
+            // Создаём ресурсы для игры
+            await tursoQuery("INSERT INTO resources (username, wood, stone, iron, dynamite, gold, pickaxe, axe, upgraded_dynamite) VALUES (?, 20, 10, 0, 0, 0, 0, 0, 0)", [username]);
+            // Создаём в hosting_users для баланса
+            await tursoQuery("INSERT INTO hosting_users (username, password, balance) VALUES (?, ?, 0)", [username, hashed]);
+            showLoginError('✅ Зарегистрирован! Теперь войдите.', 'green');
+        } catch (e) {
+            console.error('Ошибка регистрации:', e);
+            showLoginError('Ошибка сервера');
         }
-        const hashed = await sha256(password);
-        await tursoQuery("INSERT INTO hosting_users (username, password, balance) VALUES (?, ?, 0)", [username, hashed]);
-        showLoginError('✅ Зарегистрирован! Теперь войдите.', 'green');
     }
 
     function showLoginError(msg, color = '#c44') {
@@ -489,7 +528,6 @@
                 document.getElementById('createError').textContent = `Недостаточно средств. Нужно ${config.price} ₽`;
                 return;
             }
-            // Списываем деньги
             await tursoQuery("UPDATE hosting_users SET balance = balance - ? WHERE username=?", [config.price, currentUser.username]);
             currentUser.balance = balance - config.price;
             document.getElementById('balanceDisplay').textContent = currentUser.balance;
@@ -501,8 +539,7 @@
         await tursoQuery("INSERT INTO hosting_servers (user_id, server_name, admin_nick, map_size, wipe_days, tariff, status) VALUES (?, ?, ?, ?, ?, ?, 'online')", 
             [userId, name, admin, config.size, config.wipe, currentTariff]);
         
-        // Добавляем в локальный список
-        const newServer = {
+        servers.push({
             id: Date.now(),
             name: name,
             admin: admin,
@@ -510,25 +547,15 @@
             wipe: config.wipe,
             tariff: currentTariff,
             status: 'online'
-        };
-        servers.push(newServer);
+        });
         closeModal('createModal');
         renderServers();
         updateConsoleSelect();
         alert(`✅ Сервер «${name}» создан!\nРазмер: ${config.size}x${config.size}\nВайп: ${config.wipe === 0 ? 'без вайпа' : config.wipe + ' дней'}`);
     }
 
-    // ========== МОДАЛКИ ==========
     function closeModal(id) {
         document.getElementById(id).classList.remove('active');
-    }
-
-    // ========== SHA-256 ==========
-    async function sha256(message) {
-        const msgBuffer = new TextEncoder().encode(message);
-        const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-        const hashArray = Array.from(new Uint8Array(hashBuffer));
-        return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
     }
 
     // ========== ИНИЦИАЛИЗАЦИЯ ==========
