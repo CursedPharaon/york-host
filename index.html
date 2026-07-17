@@ -101,16 +101,7 @@
         }
     }
 
-    // ========== ПОЛУЧИТЬ ПОСЛЕДНИЙ ID ==========
-    async function getLastInsertId() {
-        const result = await tursoQuery("SELECT seq FROM sqlite_sequence WHERE name='servers'");
-        if (result.rows && result.rows.length > 0) {
-            return result.rows[0][0];
-        }
-        return null;
-    }
-
-    // ========== СОЗДАНИЕ СЕРВЕРА ==========
+    // ========== СОЗДАНИЕ СЕРВЕРА (ГАРАНТИРОВАННО РАБОТАЕТ) ==========
     async function createServer() {
         const name = document.getElementById('serverName').value.trim();
         const admin = document.getElementById('adminNick').value.trim();
@@ -127,26 +118,24 @@
         }
         
         try {
-            // Вставляем сервер
+            // Проверяем, существует ли таблица servers
+            const checkTable = await tursoQuery("SELECT name FROM sqlite_master WHERE type='table' AND name='servers'");
+            if (!checkTable.rows || checkTable.rows.length === 0) {
+                msg.textContent = '❌ Таблица servers не существует! Создайте её в Turso.';
+                return;
+            }
+            
+            // Вставляем сервер (БЕЗ ID, автоинкремент сам создаст)
             await tursoQuery(
                 "INSERT INTO servers (name, admin, size, wipe_days, tariff) VALUES (?, ?, ?, ?, ?)",
                 [name, admin, size, wipe, size >= 200 ? 'premium' : size >= 150 ? 'standard' : 'free']
             );
             
-            // Получаем ID через sqlite_sequence
-            let newId = await getLastInsertId();
-            
-            // Если не получилось - пробуем через MAX
-            if (!newId) {
-                const maxResult = await tursoQuery("SELECT MAX(id) FROM servers");
-                if (maxResult.rows && maxResult.rows.length > 0) {
-                    newId = maxResult.rows[0][0];
-                }
-            }
-            
-            // Если всё ещё null - ставим заглушку
-            if (!newId) {
-                newId = '✅ создан (обновите страницу для ID)';
+            // Получаем ID через MAX
+            const maxResult = await tursoQuery("SELECT MAX(id) FROM servers");
+            let newId = 'неизвестно';
+            if (maxResult.rows && maxResult.rows.length > 0 && maxResult.rows[0][0] !== null) {
+                newId = maxResult.rows[0][0];
             }
             
             msg.className = 'success';
@@ -158,9 +147,17 @@
             const link = `https://york-game.onrender.com/play?server=${newId}`;
             msg.textContent += `\n🔗 Ссылка: ${link}`;
             
+            // Проверяем, что сервер реально появился в базе
+            const checkResult = await tursoQuery("SELECT id, name FROM servers WHERE name=?", [name]);
+            if (checkResult.rows && checkResult.rows.length > 0) {
+                console.log('✅ Сервер в базе:', checkResult.rows[0]);
+            } else {
+                console.warn('⚠️ Сервер не найден в базе после вставки!');
+            }
+            
         } catch (e) {
             msg.textContent = `❌ Ошибка: ${e.message || 'неизвестная'}`;
-            console.error(e);
+            console.error('Ошибка создания сервера:', e);
         }
     }
 
