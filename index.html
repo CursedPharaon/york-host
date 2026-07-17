@@ -218,67 +218,48 @@
         }
     }
 
-    // ========== SHA-256 ==========
-    async function sha256(message) {
-        const msgBuffer = new TextEncoder().encode(message);
-        const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-        const hashArray = Array.from(new Uint8Array(hashBuffer));
-        return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-    }
-
     // ========== ВСЁ ОСТАЛЬНОЕ ==========
     let currentUser = null;
     let servers = [];
     let currentTariff = null;
 
-    // ========== ВХОД (используем таблицу players из 
+    // ========== ВХОД (без хэша — обычный текст) ==========
     async function login() {
-    const username = document.getElementById('loginUsername').value.trim();
-    const password = document.getElementById('loginPassword').value.trim();
-    if (!username || !password) {
-        showLoginError('Заполните все поля');
-        return;
-    }
-    try {
-        const hashed = await sha256(password);
-        console.log('📝 Введённый пароль (хэш):', hashed);
-        
-        // Ищем пользователя в таблице players
-        const result = await tursoQuery("SELECT username, password, is_admin FROM players WHERE username = ?", [username]);
-        console.log('📊 Результат запроса:', result);
-        
-        if (!result.rows || result.rows.length === 0) {
-            showLoginError('❌ Пользователь не найден');
+        const username = document.getElementById('loginUsername').value.trim();
+        const password = document.getElementById('loginPassword').value.trim();
+        if (!username || !password) {
+            showLoginError('Заполните все поля');
             return;
         }
-        
-        const storedHash = result.rows[0][1];
-        console.log('🔐 Хэш из базы:', storedHash);
-        
-        if (storedHash !== hashed) {
-            showLoginError('❌ Неверный пароль');
-            return;
+        try {
+            // Ищем пользователя в таблице players (сравниваем обычный текст)
+            const result = await tursoQuery("SELECT username, password, is_admin FROM players WHERE username = ? AND password = ?", [username, password]);
+            console.log('📊 Результат запроса:', result);
+            
+            if (!result.rows || result.rows.length === 0) {
+                showLoginError('❌ Неверный логин или пароль');
+                return;
+            }
+            
+            // Проверяем баланс в hosting_users
+            const balanceCheck = await tursoQuery("SELECT balance FROM hosting_users WHERE username = ?", [username]);
+            let balance = 0;
+            if (balanceCheck.rows && balanceCheck.rows.length > 0) {
+                balance = balanceCheck.rows[0][0] || 0;
+            } else {
+                await tursoQuery("INSERT INTO hosting_users (username, password, balance) VALUES (?, ?, 0)", [username, password]);
+                balance = 0;
+            }
+            currentUser = { username, balance };
+            localStorage.setItem('york_hosting_user', JSON.stringify(currentUser));
+            showDashboard();
+        } catch (e) {
+            console.error('🔥 Ошибка входа:', e);
+            showLoginError('Ошибка сервера');
         }
-        
-        // Проверяем баланс в hosting_users
-        const balanceCheck = await tursoQuery("SELECT balance FROM hosting_users WHERE username = ?", [username]);
-        let balance = 0;
-        if (balanceCheck.rows && balanceCheck.rows.length > 0) {
-            balance = balanceCheck.rows[0][0] || 0;
-        } else {
-            await tursoQuery("INSERT INTO hosting_users (username, password, balance) VALUES (?, ?, 0)", [username, hashed]);
-            balance = 0;
-        }
-        currentUser = { username, balance };
-        localStorage.setItem('york_hosting_user', JSON.stringify(currentUser));
-        showDashboard();
-    } catch (e) {
-        console.error('🔥 Ошибка входа:', e);
-        showLoginError('Ошибка сервера');
     }
-}
 
-    // ========== РЕГИСТРАЦИЯ (создаём в players и в hosting_users) ==========
+    // ========== РЕГИСТРАЦИЯ (без хэша) ==========
     async function register() {
         const username = document.getElementById('loginUsername').value.trim();
         const password = document.getElementById('loginPassword').value.trim();
@@ -288,21 +269,20 @@
         }
         try {
             // Проверяем в players
-            const check = await tursoQuery("SELECT username FROM players WHERE username=?", [username]);
+            const check = await tursoQuery("SELECT username FROM players WHERE username = ?", [username]);
             if (check.rows && check.rows.length > 0) {
                 showLoginError('Пользователь уже существует');
                 return;
             }
-            const hashed = await sha256(password);
-            // Создаём в players (как в игре)
-            await tursoQuery("INSERT INTO players (username, password, is_admin) VALUES (?, ?, 0)", [username, hashed]);
+            // Создаём в players (пароль в открытом виде)
+            await tursoQuery("INSERT INTO players (username, password, is_admin) VALUES (?, ?, 0)", [username, password]);
             // Создаём ресурсы для игры
             await tursoQuery("INSERT INTO resources (username, wood, stone, iron, dynamite, gold, pickaxe, axe, upgraded_dynamite) VALUES (?, 20, 10, 0, 0, 0, 0, 0, 0)", [username]);
             // Создаём в hosting_users для баланса
-            await tursoQuery("INSERT INTO hosting_users (username, password, balance) VALUES (?, ?, 0)", [username, hashed]);
+            await tursoQuery("INSERT INTO hosting_users (username, password, balance) VALUES (?, ?, 0)", [username, password]);
             showLoginError('✅ Зарегистрирован! Теперь войдите.', 'green');
         } catch (e) {
-            console.error('Ошибка регистрации:', e);
+            console.error('🔥 Ошибка регистрации:', e);
             showLoginError('Ошибка сервера');
         }
     }
