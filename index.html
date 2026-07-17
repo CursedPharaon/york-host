@@ -7,191 +7,74 @@
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
         body{background:#0a0f0a;font-family:'Courier New',monospace;color:#eee;display:flex;justify-content:center;align-items:center;min-height:100vh;padding:20px}
-        .container{max-width:900px;width:100%;background:#121a12;border:2px solid #2a4a2a;border-radius:16px;padding:24px 20px}
-        .logo{font-size:32px;font-weight:bold;color:#3a8a3a;letter-spacing:2px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;border-bottom:1px solid #1a2a1a;padding-bottom:14px}
+        .container{max-width:700px;width:100%;background:#121a12;border:2px solid #2a4a2a;border-radius:16px;padding:24px 20px}
+        .logo{font-size:32px;font-weight:bold;color:#3a8a3a;letter-spacing:2px;border-bottom:1px solid #1a2a1a;padding-bottom:14px}
         .logo span{color:#5a9a5a}
-        .user-info{font-size:13px;color:#6a8a6a}
-        .user-info b{color:#8a8}
-        .tabs{display:flex;gap:8px;margin:16px 0 12px;flex-wrap:wrap}
-        .tabs button{background:#0f1a0f;border:1px solid #1a2a1a;color:#6a8a6a;padding:8px 18px;border-radius:8px;cursor:pointer;font-family:inherit;font-size:14px;transition:0.2s}
-        .tabs button.active{border-color:#3a7a3a;color:#8a8;background:#1a2a1a}
-        .tabs button:hover{border-color:#2a4a2a;color:#aaa}
-        .panel{display:none;animation:fade .3s}
-        .panel.active{display:block}
-        @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
-        .login-box{max-width:400px;margin:40px auto;text-align:center}
-        .login-box h2{color:#8a8;margin-bottom:16px}
-        .login-box input{width:100%;padding:12px;margin:8px 0;background:#0a0f0a;border:1px solid #1a2a1a;color:#eee;border-radius:8px;font-family:inherit;font-size:16px}
-        .login-box input:focus{border-color:#2a4a2a;outline:none}
-        .login-box button{width:100%;padding:12px;background:#2a4a2a;border:1px solid #3a5a3a;color:#eee;border-radius:8px;font-family:inherit;font-size:16px;font-weight:bold;cursor:pointer;transition:0.2s}
-        .login-box button:hover{background:#3a6a3a}
-        .login-box .error{color:#c44;margin-top:8px;font-size:14px}
-        .login-box .success{color:#4a4;margin-top:8px;font-size:14px}
-        .server-card{background:#0f1a0f;border:1px solid #1a2a1a;border-radius:12px;padding:16px 18px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px}
-        .server-card .name{font-size:18px;font-weight:bold;color:#8a8}
-        .server-card .status{font-size:13px;padding:4px 12px;border-radius:20px}
-        .server-card .status.online{background:#1a3a1a;color:#4a4}
-        .server-card .status.offline{background:#2a1a1a;color:#a44}
-        .server-card .actions{display:flex;gap:8px;flex-wrap:wrap}
-        .server-card .actions button{background:#1a2a1a;border:1px solid #2a3a2a;color:#aaa;padding:6px 14px;border-radius:6px;cursor:pointer;font-family:inherit;font-size:13px;transition:0.2s}
-        .server-card .actions button:hover{border-color:#3a5a3a;color:#eee}
-        .server-card .actions button.danger:hover{border-color:#5a2a2a;color:#c44}
-        .console-box{background:#0a0f0a;border:1px solid #1a2a1a;border-radius:8px;padding:12px;height:280px;overflow-y:auto;font-size:13px;line-height:1.6;margin:8px 0 10px;font-family:'Courier New',monospace}
-        .console-box .log-entry{border-bottom:1px solid #111f11;padding:2px 0}
-        .console-box .log-entry .time{color:#4a6a4a}
-        .console-box .log-entry .server{color:#4a8a4a}
-        .console-box .log-entry .player{color:#8a8}
-        .console-box .log-entry .system{color:#6a8a6a}
-        .console-input{display:flex;gap:8px;margin-top:6px}
-        .console-input input{flex:1;background:#0a0f0a;border:1px solid #1a2a1a;color:#eee;padding:10px 14px;border-radius:8px;font-family:inherit;font-size:14px;outline:none}
-        .console-input input:focus{border-color:#2a4a2a}
-        .console-input button{background:#1a2a1a;border:1px solid #2a3a2a;color:#eee;padding:10px 20px;border-radius:8px;cursor:pointer;font-family:inherit;font-weight:bold;transition:0.2s}
-        .console-input button:hover{border-color:#3a5a3a}
-        .tariffs-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin:12px 0}
-        .tariff-card{background:#0f1a0f;border:1px solid #1a2a1a;border-radius:12px;padding:18px 16px;text-align:center}
-        .tariff-card .name{font-size:18px;font-weight:bold;color:#8a8}
-        .tariff-card .details{font-size:13px;color:#6a8a6a;margin:6px 0;line-height:1.6}
-        .tariff-card .price{font-size:22px;font-weight:bold;color:#4a9a4a}
-        .tariff-card .price small{font-size:13px;color:#6a8a6a;font-weight:normal}
-        .tariff-card button{margin-top:10px;background:#2a4a2a;border:none;color:#eee;padding:8px 20px;border-radius:6px;font-family:inherit;font-weight:bold;cursor:pointer;transition:0.2s;border:1px solid #3a5a3a;width:100%}
-        .tariff-card button:hover{background:#3a6a3a}
-        .modal-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);justify-content:center;align-items:center;z-index:999}
-        .modal-overlay.active{display:flex}
-        .modal{background:#121a12;border:2px solid #2a4a2a;border-radius:16px;padding:30px 24px;max-width:400px;width:100%;text-align:center}
-        .modal h2{color:#8a8;font-size:22px;margin-bottom:6px}
-        .modal .desc{color:#6a8a6a;font-size:14px;margin-bottom:18px}
-        .modal .btn-group{display:flex;flex-direction:column;gap:10px}
-        .modal .btn-group a{display:flex;align-items:center;justify-content:center;gap:10px;background:#1a2a1a;border:1px solid #2a3a2a;color:#eee;padding:12px;border-radius:8px;text-decoration:none;font-weight:bold;transition:0.2s}
-        .modal .btn-group a:hover{border-color:#3a5a3a;background:#1f2f1f}
-        .modal .btn-group .vk{border-color:#2a3a5a}
-        .modal .btn-group .vk:hover{border-color:#3a5a8a}
-        .modal .btn-group .tg{border-color:#2a5a5a}
-        .modal .btn-group .tg:hover{border-color:#3a7a7a}
-        .modal .close-btn{margin-top:14px;background:transparent;border:1px solid #2a3a2a;color:#6a8a6a;padding:8px 20px;border-radius:6px;cursor:pointer;font-family:inherit}
-        .modal .close-btn:hover{border-color:#3a4a3a}
-        .status-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px}
-        .status-dot.online{background:#4a4}
-        .status-dot.offline{background:#a44}
-        .empty-state{text-align:center;color:#4a6a4a;padding:30px 0}
-        .empty-state .big{font-size:48px;margin-bottom:8px}
-        .hidden{display:none !important}
-        .balance{color:#4a9a4a;font-weight:bold}
-        .form-group{margin:10px 0}
+        .form-group{margin:12px 0}
         .form-group label{display:block;color:#6a8a6a;font-size:14px;margin-bottom:4px}
-        .form-group input,.form-group select{width:100%;padding:10px;background:#0a0f0a;border:1px solid #1a2a1a;color:#eee;border-radius:8px;font-family:inherit}
+        .form-group input,.form-group select{width:100%;padding:10px;background:#0a0f0a;border:1px solid #1a2a1a;color:#eee;border-radius:8px;font-family:inherit;font-size:16px}
         .form-group input:focus,.form-group select:focus{border-color:#2a4a2a;outline:none}
-        .btn-primary{background:#2a4a2a;border:1px solid #3a5a3a;color:#eee;padding:12px 24px;border-radius:8px;font-family:inherit;font-weight:bold;cursor:pointer;transition:0.2s;width:100%}
+        .btn-primary{background:#2a4a2a;border:1px solid #3a5a3a;color:#eee;padding:12px 24px;border-radius:8px;font-family:inherit;font-weight:bold;cursor:pointer;transition:0.2s;width:100%;font-size:16px}
         .btn-primary:hover{background:#3a6a3a}
-        .copy-link{background:#1a2a1a;border:1px solid #2a3a2a;color:#6a8a6a;padding:4px 10px;border-radius:4px;cursor:pointer;font-family:inherit;font-size:12px;transition:0.2s}
-        .copy-link:hover{border-color:#3a5a3a;color:#aaa}
-        @media(max-width:600px){.container{padding:14px}.logo{font-size:24px}.server-card{flex-direction:column;align-items:stretch}.server-card .actions{justify-content:center}.console-input{flex-direction:column}.tariffs-grid{grid-template-columns:1fr}}
+        .server-item{background:#0f1a0f;border:1px solid #1a2a1a;border-radius:8px;padding:12px 16px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+        .server-item .name{font-size:16px;font-weight:bold;color:#8a8}
+        .server-item .status{font-size:13px;padding:2px 12px;border-radius:20px}
+        .server-item .status.online{background:#1a3a1a;color:#4a4}
+        .server-item .status.offline{background:#2a1a1a;color:#a44}
+        .server-item .actions{display:flex;gap:6px;flex-wrap:wrap}
+        .server-item .actions button{background:#1a2a1a;border:1px solid #2a3a2a;color:#aaa;padding:4px 12px;border-radius:6px;cursor:pointer;font-family:inherit;font-size:12px}
+        .server-item .actions button:hover{border-color:#3a5a3a;color:#eee}
+        .server-item .actions button.danger:hover{border-color:#5a2a2a;color:#c44}
+        .hidden{display:none !important}
+        .error{color:#c44;margin-top:8px;font-size:14px}
+        .success{color:#4a4;margin-top:8px;font-size:14px}
+        .empty{color:#4a6a4a;padding:20px 0;text-align:center}
+        .info{font-size:12px;color:#4a6a4a;margin-top:6px}
+        .copy-btn{background:#1a2a1a;border:1px solid #2a3a2a;color:#6a8a6a;padding:2px 8px;border-radius:4px;cursor:pointer;font-size:11px}
+        .copy-btn:hover{border-color:#3a5a3a;color:#aaa}
+        @media(max-width:600px){.container{padding:14px}.logo{font-size:24px}}
     </style>
 </head>
 <body>
 
 <div class="container" id="app">
-    <div id="header" class="hidden">
-        <div class="logo">
-            Y<span>O</span>RK <span style="font-size:14px;color:#4a6a4a;">hosting</span>
-            <div class="user-info">
-                👤 <b id="usernameDisplay"></b>
-                <span style="margin-left:12px;">💰 <span id="balanceDisplay" class="balance">0</span> ₽</span>
-                <button onclick="logout()" style="margin-left:12px;background:#1a2a1a;border:1px solid #2a3a2a;color:#6a8a6a;padding:4px 12px;border-radius:4px;cursor:pointer;font-family:inherit;font-size:12px;">Выйти</button>
-            </div>
-        </div>
-        <div class="tabs">
-            <button class="active" data-tab="servers">📡 Мои сервера</button>
-            <button data-tab="create">🛒 Создать сервер</button>
-            <button data-tab="console">🖥️ Консоль</button>
-        </div>
-    </div>
-
-    <div id="loginPage">
-        <div class="login-box">
-            <h2>🔐 Вход в York Hosting</h2>
-            <input id="loginUsername" placeholder="Никнейм">
-            <input id="loginPassword" type="password" placeholder="Пароль">
-            <button onclick="login()">Войти</button>
-            <button onclick="register()" style="background:#1a2a1a;border-color:#2a3a2a;margin-top:8px;">Зарегистрироваться</button>
-            <div id="loginError" class="error"></div>
-            <div id="loginSuccess" class="success"></div>
-        </div>
-    </div>
-
-    <div id="dashboard" class="hidden">
-        <div id="tab-servers" class="panel active">
-            <div id="serverList"></div>
-        </div>
-        <div id="tab-create" class="panel">
-            <h3 style="color:#8a8;margin-bottom:12px;">🛒 Выберите тариф</h3>
-            <div class="tariffs-grid">
-                <div class="tariff-card">
-                    <div class="name">🆓 Бесплатный</div>
-                    <div class="details">40x40 · 7 дней вайп<br>5 игроков · 3 дома</div>
-                    <div class="price" style="color:#6a8a6a;">0 ₽</div>
-                    <button onclick="showCreateForm('free')">Создать</button>
-                </div>
-                <div class="tariff-card">
-                    <div class="name">⭐ Стандарт</div>
-                    <div class="details">150x150 · 30 дней вайп<br>20 игроков · безлимит домов</div>
-                    <div class="price">79 ₽ <small>/мес</small></div>
-                    <button onclick="showCreateForm('standard')">Купить</button>
-                </div>
-                <div class="tariff-card">
-                    <div class="name">👑 Премиум</div>
-                    <div class="details">250x250 · без вайпа<br>50 игроков · безлимит домов<br>Приоритетная поддержка</div>
-                    <div class="price">199 ₽ <small>/мес</small></div>
-                    <button onclick="showCreateForm('premium')">Купить</button>
-                </div>
-            </div>
-            <div style="font-size:13px;color:#4a6a4a;text-align:center;">💳 Для платных тарифов — напишите в ВК или ТГ</div>
-        </div>
-        <div id="tab-console" class="panel">
-            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
-                <h3 style="color:#8a8;">🖥️ Консоль сервера</h3>
-                <select id="consoleServerSelect" style="background:#0a0f0a;border:1px solid #1a2a1a;color:#eee;padding:6px 12px;border-radius:6px;font-family:inherit;"></select>
-            </div>
-            <div class="console-box" id="consoleLog">
-                <div class="log-entry"><span class="time">[--:--:--]</span> <span class="system">[Система]</span> Выберите сервер</div>
-            </div>
-            <div class="console-input">
-                <input id="consoleInput" placeholder="Команда (/say текст, /kick ник)" onkeydown="if(event.key==='Enter')sendConsoleCommand()">
-                <button onclick="sendConsoleCommand()">➤ Отправить</button>
-            </div>
-            <div style="font-size:12px;color:#4a6a4a;margin-top:6px;">💡 /say [текст] — сообщение от сервера, /kick [ник] — кикнуть</div>
-        </div>
-    </div>
-</div>
-
-<!-- МОДАЛКА СОЗДАНИЯ -->
-<div class="modal-overlay" id="createModal">
-    <div class="modal">
-        <h2 id="modalTitle">🏗️ Создание сервера</h2>
-        <div class="desc" id="modalDesc"></div>
+    <div class="logo">Y<span>O</span>RK <span style="font-size:14px;color:#4a6a4a;">hosting</span></div>
+    
+    <div style="margin:16px 0;">
         <div class="form-group">
-            <label>Название сервера</label>
-            <input id="createServerName" placeholder="Например: York PvP">
+            <label>🌐 Название сервера</label>
+            <input id="serverName" placeholder="Например: York PvP">
         </div>
         <div class="form-group">
-            <label>Ваш ник в игре (администратор)</label>
-            <input id="createAdminNick" placeholder="Ваш ник">
+            <label>👤 Ваш ник в игре (администратор)</label>
+            <input id="adminNick" placeholder="Ваш ник" value="cursed_pharaon">
         </div>
-        <button class="btn-primary" onclick="createServer()">✅ Создать сервер</button>
-        <button class="close-btn" onclick="closeModal('createModal')" style="margin-top:10px;">Закрыть</button>
-        <div id="createError" style="color:#c44;margin-top:8px;font-size:14px;"></div>
+        <div class="form-group">
+            <label>📐 Размер карты</label>
+            <select id="mapSize">
+                <option value="40">40x40 (бесплатно)</option>
+                <option value="150" selected>150x150 (стандарт)</option>
+                <option value="200">200x200 (премиум)</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>🔄 Вайп (дни)</label>
+            <select id="wipeDays">
+                <option value="7">7 дней</option>
+                <option value="14">14 дней</option>
+                <option value="30" selected>30 дней</option>
+                <option value="0">Без вайпа</option>
+            </select>
+        </div>
+        <button class="btn-primary" onclick="createServer()">🚀 Создать сервер</button>
+        <div id="message" class="error"></div>
     </div>
-</div>
 
-<!-- МОДАЛКА ОПЛАТЫ -->
-<div class="modal-overlay" id="paymentModal">
-    <div class="modal">
-        <h2>💳 Оплата</h2>
-        <div class="desc" id="paymentDesc"></div>
-        <div class="btn-group">
-            <a href="https://vk.ru/kalashnikov3002" target="_blank" class="vk">✉️ Написать в ВК</a>
-            <a href="https://t.me/cursed_pharaon" target="_blank" class="tg">✉️ Написать в Telegram</a>
-        </div>
-        <button class="close-btn" onclick="closeModal('paymentModal')">Закрыть</button>
+    <hr style="border-color:#1a2a1a;margin:16px 0;">
+
+    <h3 style="color:#8a8;font-size:18px;">📡 Список серверов</h3>
+    <div id="serverList">
+        <div class="empty">Загрузка...</div>
     </div>
 </div>
 
@@ -218,365 +101,112 @@
         }
     }
 
-    // ========== SHA-256 ==========
-    async function sha256(message) {
-        const msgBuffer = new TextEncoder().encode(message);
-        const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-        const hashArray = Array.from(new Uint8Array(hashBuffer));
-        return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-    }
-
-    // ========== ВСЁ ОСТАЛЬНОЕ ==========
-    let currentUser = null;
-    let servers = [];
-    let currentTariff = null;
-
-    // ========== ВХОД (с хэшированием) ==========
-    async function login() {
-        const username = document.getElementById('loginUsername').value.trim();
-        const password = document.getElementById('loginPassword').value.trim();
-        if (!username || !password) {
-            showLoginError('Заполните все поля');
-            return;
-        }
-        try {
-            const hashed = await sha256(password);
-            console.log('📝 Введённый пароль (хэш):', hashed);
-            
-            // Ищем в hosting_users
-            const result = await tursoQuery("SELECT username, password, balance FROM hosting_users WHERE username = ?", [username]);
-            console.log('📊 Результат запроса:', result);
-            
-            if (!result.rows || result.rows.length === 0) {
-                showLoginError('❌ Пользователь не найден');
-                return;
-            }
-            
-            const storedHash = result.rows[0][1];
-            console.log('🔐 Хэш из базы:', storedHash);
-            
-            if (storedHash !== hashed) {
-                showLoginError('❌ Неверный пароль');
-                return;
-            }
-            
-            currentUser = { 
-                username: result.rows[0][0], 
-                balance: result.rows[0][2] || 0 
-            };
-            localStorage.setItem('york_hosting_user', JSON.stringify(currentUser));
-            showDashboard();
-        } catch (e) {
-            console.error('🔥 Ошибка входа:', e);
-            showLoginError('Ошибка сервера');
-        }
-    }
-
-    // ========== РЕГИСТРАЦИЯ (с хэшированием) ==========
-    async function register() {
-        const username = document.getElementById('loginUsername').value.trim();
-        const password = document.getElementById('loginPassword').value.trim();
-        if (!username || !password) {
-            showLoginError('Заполните все поля');
-            return;
-        }
-        try {
-            // Проверяем, есть ли пользователь
-            const check = await tursoQuery("SELECT username FROM hosting_users WHERE username = ?", [username]);
-            if (check.rows && check.rows.length > 0) {
-                showLoginError('❌ Пользователь уже существует');
-                return;
-            }
-            
-            const hashed = await sha256(password);
-            console.log('📝 Новый пароль (хэш):', hashed);
-            
-            // Создаём в hosting_users
-            await tursoQuery(
-                "INSERT INTO hosting_users (username, password, balance) VALUES (?, ?, 0)", 
-                [username, hashed]
-            );
-            
-            // Создаём в players (если используется)
-            await tursoQuery(
-                "INSERT OR IGNORE INTO players (username, password, is_admin) VALUES (?, ?, 0)", 
-                [username, hashed]
-            );
-            
-            showLoginError('✅ Зарегистрирован! Теперь войдите.', 'green');
-        } catch (e) {
-            console.error('🔥 Ошибка регистрации:', e);
-            showLoginError('Ошибка сервера: ' + e.message);
-        }
-    }
-
-    function showLoginError(msg, color = '#c44') {
-        const el = document.getElementById('loginError');
-        el.textContent = msg;
-        el.style.color = color;
-        if (color === 'green') {
-            document.getElementById('loginSuccess').textContent = msg;
-            document.getElementById('loginSuccess').style.color = '#4a4';
-        } else {
-            document.getElementById('loginSuccess').textContent = '';
-        }
-        setTimeout(() => { el.textContent = ''; document.getElementById('loginSuccess').textContent = ''; }, 4000);
-    }
-
-    function logout() {
-        currentUser = null;
-        localStorage.removeItem('york_hosting_user');
-        document.getElementById('loginPage').classList.remove('hidden');
-        document.getElementById('dashboard').classList.add('hidden');
-        document.getElementById('header').classList.add('hidden');
-    }
-
-    function showDashboard() {
-        document.getElementById('loginPage').classList.add('hidden');
-        document.getElementById('dashboard').classList.remove('hidden');
-        document.getElementById('header').classList.remove('hidden');
-        document.getElementById('usernameDisplay').textContent = currentUser.username;
-        document.getElementById('balanceDisplay').textContent = currentUser.balance;
-        loadServers();
-        setupTabs();
-    }
-
-    function setupTabs() {
-        document.querySelectorAll('.tabs button').forEach(btn => {
-            btn.removeEventListener('click', tabHandler);
-            btn.addEventListener('click', tabHandler);
-        });
-    }
-
-    function tabHandler() {
-        document.querySelectorAll('.tabs button').forEach(b => b.classList.remove('active'));
-        this.classList.add('active');
-        const tab = this.dataset.tab;
-        document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-        document.getElementById('tab-' + tab).classList.add('active');
-        if (tab === 'console') loadConsole();
-    }
-
-    // ========== СЕРВЕРА ==========
+    // ========== ЗАГРУЗКА СПИСКА СЕРВЕРОВ ==========
     async function loadServers() {
-        const result = await tursoQuery("SELECT id, server_name, admin_nick, map_size, wipe_days, tariff, status FROM hosting_servers WHERE user_id=(SELECT id FROM hosting_users WHERE username=?)", [currentUser.username]);
-        servers = [];
-        if (result.rows) {
-            for (const row of result.rows) {
-                servers.push({
-                    id: row[0],
-                    name: row[1],
-                    admin: row[2],
-                    size: row[3],
-                    wipe: row[4],
-                    tariff: row[5],
-                    status: row[6]
-                });
-            }
-        }
-        renderServers();
-        updateConsoleSelect();
-    }
-
-    function renderServers() {
         const list = document.getElementById('serverList');
-        if (servers.length === 0) {
-            list.innerHTML = `
-                <div class="empty-state">
-                    <div class="big">🏗️</div>
-                    <div>У вас пока нет серверов</div>
-                    <div style="font-size:13px;color:#4a6a4a;">Перейдите во вкладку «Создать сервер»</div>
-                </div>
-            `;
-            return;
-        }
-        list.innerHTML = servers.map(s => `
-            <div class="server-card">
-                <div>
-                    <div class="name">🌐 ${s.name}</div>
-                    <div style="font-size:13px;color:#6a8a6a;">admin: ${s.admin} · ${s.size}x${s.size} · вайп ${s.wipe}д · ${s.tariff}</div>
-                </div>
-                <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-                    <span class="status ${s.status}"><span class="status-dot ${s.status}"></span>${s.status === 'online' ? 'Онлайн' : 'Офлайн'}</span>
-                    <div class="actions">
-                        <button onclick="copyLink(${s.id})" style="background:#1a2a1a;border-color:#2a3a2a;color:#6a8a6a;" title="Скопировать ссылку">🔗</button>
-                        <button onclick="toggleServer(${s.id})">${s.status === 'online' ? '⏸️' : '▶️'}</button>
-                        <button onclick="openConsoleTab(${s.id})">🖥️</button>
-                        <button class="danger" onclick="deleteServer(${s.id})">🗑️</button>
+        list.innerHTML = '<div class="empty">⏳ Загрузка...</div>';
+        try {
+            const result = await tursoQuery("SELECT id, name, admin, size, wipe_days, tariff FROM servers ORDER BY id DESC");
+            if (!result.rows || result.rows.length === 0) {
+                list.innerHTML = '<div class="empty">📭 Серверов пока нет</div>';
+                return;
+            }
+            list.innerHTML = result.rows.map(row => {
+                const id = row[0];
+                const name = row[1];
+                const admin = row[2];
+                const size = row[3];
+                const wipe = row[4];
+                const tariff = row[5] || 'free';
+                const link = `https://york-game.onrender.com/play?server=${id}`;
+                return `
+                    <div class="server-item">
+                        <div>
+                            <div class="name">🌐 ${name}</div>
+                            <div style="font-size:12px;color:#6a8a6a;">admin: ${admin} · ${size}x${size} · вайп ${wipe}д · ${tariff}</div>
+                            <div style="font-size:11px;color:#4a6a4a;margin-top:2px;">
+                                🔗 ${link}
+                                <button class="copy-btn" onclick="copyLink('${link}')">📋 Копировать</button>
+                            </div>
+                        </div>
+                        <div style="display:flex;gap:6px;align-items:center;">
+                            <span class="status online">● онлайн</span>
+                            <button onclick="deleteServer(${id})" class="danger" style="background:#1a2a1a;border:1px solid #2a3a2a;color:#aaa;padding:4px 12px;border-radius:6px;cursor:pointer;font-size:12px;">🗑️</button>
+                        </div>
                     </div>
-                </div>
-            </div>
-        `).join('');
-    }
-
-    function copyLink(id) {
-        const link = `https://york-game.onrender.com/play?server=${id}`;
-        navigator.clipboard.writeText(link).then(() => {
-            alert(`✅ Ссылка скопирована!\n${link}`);
-        }).catch(() => {
-            prompt('Скопируйте ссылку вручную:', link);
-        });
-    }
-
-    async function toggleServer(id) {
-        const server = servers.find(s => s.id === id);
-        if (!server) return;
-        const newStatus = server.status === 'online' ? 'offline' : 'online';
-        await tursoQuery("UPDATE hosting_servers SET status=? WHERE id=?", [newStatus, id]);
-        server.status = newStatus;
-        renderServers();
-    }
-
-    async function deleteServer(id) {
-        if (!confirm('Удалить сервер? Все данные будут потеряны.')) return;
-        await tursoQuery("DELETE FROM hosting_servers WHERE id=?", [id]);
-        servers = servers.filter(s => s.id !== id);
-        renderServers();
-        updateConsoleSelect();
-    }
-
-    function openConsoleTab(id) {
-        document.querySelectorAll('.tabs button').forEach(b => b.classList.remove('active'));
-        document.querySelector('[data-tab="console"]').classList.add('active');
-        document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-        document.getElementById('tab-console').classList.add('active');
-        document.getElementById('consoleServerSelect').value = id;
-        loadConsole();
-    }
-
-    // ========== КОНСОЛЬ ==========
-    function updateConsoleSelect() {
-        const select = document.getElementById('consoleServerSelect');
-        select.innerHTML = servers.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
-        if (servers.length > 0) {
-            select.value = servers[0].id;
-            loadConsole();
-        } else {
-            document.getElementById('consoleLog').innerHTML = '<div class="log-entry"><span class="system">[Система]</span> Нет серверов</div>';
-        }
-    }
-
-    function loadConsole() {
-        const select = document.getElementById('consoleServerSelect');
-        const serverId = parseInt(select.value);
-        if (!serverId) return;
-        const logs = JSON.parse(localStorage.getItem('york_console_logs_' + serverId) || '[]');
-        const logBox = document.getElementById('consoleLog');
-        if (logs.length === 0) {
-            logBox.innerHTML = `<div class="log-entry"><span class="time">[--:--:--]</span> <span class="system">[Система]</span> Консоль готова</div>`;
-            return;
-        }
-        logBox.innerHTML = logs.map(log => `
-            <div class="log-entry">
-                <span class="time">[${log.time}]</span>
-                <span class="${log.type === 'Сервер' ? 'server' : log.type === 'Система' ? 'system' : 'player'}">[${log.type}]</span> ${log.message}
-            </div>
-        `).join('');
-        logBox.scrollTop = logBox.scrollHeight;
-    }
-
-    function addConsoleLog(serverId, type, message) {
-        const logs = JSON.parse(localStorage.getItem('york_console_logs_' + serverId) || '[]');
-        const time = new Date().toLocaleTimeString();
-        logs.push({ time, type, message });
-        if (logs.length > 100) logs.shift();
-        localStorage.setItem('york_console_logs_' + serverId, JSON.stringify(logs));
-        const select = document.getElementById('consoleServerSelect');
-        if (parseInt(select.value) === serverId) loadConsole();
-    }
-
-    function sendConsoleCommand() {
-        const input = document.getElementById('consoleInput');
-        const cmd = input.value.trim();
-        if (!cmd) return;
-        input.value = '';
-        const select = document.getElementById('consoleServerSelect');
-        const serverId = parseInt(select.value);
-        if (!serverId) return;
-        addConsoleLog(serverId, 'Система', `Выполнена команда: ${cmd}`);
-        if (cmd.startsWith('/say ')) {
-            const msg = cmd.replace('/say ', '');
-            addConsoleLog(serverId, 'Сервер', `[Сообщение сервера] ${msg}`);
-        } else {
-            addConsoleLog(serverId, 'Сервер', `Команда выполнена: ${cmd}`);
+                `;
+            }).join('');
+        } catch (e) {
+            list.innerHTML = '<div class="empty">❌ Ошибка загрузки</div>';
+            console.error(e);
         }
     }
 
     // ========== СОЗДАНИЕ СЕРВЕРА ==========
-    function showCreateForm(tariff) {
-        currentTariff = tariff;
-        const names = { free: 'Бесплатный', standard: 'Стандарт', premium: 'Премиум' };
-        const prices = { free: '0 ₽', standard: '79 ₽/мес', premium: '199 ₽/мес' };
-        document.getElementById('modalTitle').textContent = '🏗️ Создание сервера';
-        document.getElementById('modalDesc').textContent = `Вы выбрали тариф «${names[tariff]}» на ${prices[tariff]}`;
-        document.getElementById('createError').textContent = '';
-        document.getElementById('createModal').classList.add('active');
-        if (tariff !== 'free') {
-            document.getElementById('createModal').classList.remove('active');
-            document.getElementById('paymentDesc').textContent = `Вы выбрали тариф «${names[tariff]}» на ${prices[tariff]}`;
-            document.getElementById('paymentModal').classList.add('active');
-        }
-    }
-
     async function createServer() {
-        const name = document.getElementById('createServerName').value.trim();
-        const admin = document.getElementById('createAdminNick').value.trim();
+        const name = document.getElementById('serverName').value.trim();
+        const admin = document.getElementById('adminNick').value.trim();
+        const size = parseInt(document.getElementById('mapSize').value);
+        const wipe = parseInt(document.getElementById('wipeDays').value);
+        
+        const msg = document.getElementById('message');
+        msg.textContent = '';
+        msg.className = 'error';
+        
         if (!name || !admin) {
-            document.getElementById('createError').textContent = 'Заполните все поля';
+            msg.textContent = '❌ Заполните название и ник администратора';
             return;
         }
-        const configs = {
-            free: { size: 40, wipe: 7, price: 0 },
-            standard: { size: 150, wipe: 30, price: 79 },
-            premium: { size: 250, wipe: 0, price: 199 }
-        };
-        const config = configs[currentTariff];
         
-        // Проверяем баланс
-        const userResult = await tursoQuery("SELECT balance FROM hosting_users WHERE username=?", [currentUser.username]);
-        if (userResult.rows && userResult.rows.length > 0) {
-            const balance = userResult.rows[0][0] || 0;
-            if (balance < config.price) {
-                document.getElementById('createError').textContent = `Недостаточно средств. Нужно ${config.price} ₽`;
-                return;
-            }
-            await tursoQuery("UPDATE hosting_users SET balance = balance - ? WHERE username=?", [config.price, currentUser.username]);
-            currentUser.balance = balance - config.price;
-            document.getElementById('balanceDisplay').textContent = currentUser.balance;
+        try {
+            const result = await tursoQuery(
+                "INSERT INTO servers (name, admin, size, wipe_days, tariff) VALUES (?, ?, ?, ?, ?) RETURNING id",
+                [name, admin, size, wipe, size >= 200 ? 'premium' : size >= 150 ? 'standard' : 'free']
+            );
+            
+            const newId = result.rows?.[0]?.[0] || 'неизвестно';
+            msg.className = 'success';
+            msg.textContent = `✅ Сервер «${name}» создан! ID: ${newId}`;
+            
+            // Очищаем поле названия
+            document.getElementById('serverName').value = '';
+            
+            // Обновляем список
+            await loadServers();
+            
+            // Показываем ссылку
+            const link = `https://york-game.onrender.com/play?server=${newId}`;
+            msg.textContent += `\n🔗 Ссылка: ${link}`;
+            
+        } catch (e) {
+            msg.textContent = `❌ Ошибка: ${e.message || 'неизвестная'}`;
+            console.error(e);
         }
-        
-        // Создаём сервер в базе
-        const userResult2 = await tursoQuery("SELECT id FROM hosting_users WHERE username=?", [currentUser.username]);
-        const userId = userResult2.rows[0][0];
-        await tursoQuery("INSERT INTO hosting_servers (user_id, server_name, admin_nick, map_size, wipe_days, tariff, status) VALUES (?, ?, ?, ?, ?, ?, 'online')", 
-            [userId, name, admin, config.size, config.wipe, currentTariff]);
-        
-        servers.push({
-            id: Date.now(),
-            name: name,
-            admin: admin,
-            size: config.size,
-            wipe: config.wipe,
-            tariff: currentTariff,
-            status: 'online'
+    }
+
+    // ========== УДАЛЕНИЕ СЕРВЕРА ==========
+    async function deleteServer(id) {
+        if (!confirm(`Удалить сервер #${id}?`)) return;
+        try {
+            await tursoQuery("DELETE FROM servers WHERE id = ?", [id]);
+            await loadServers();
+        } catch (e) {
+            alert('Ошибка удаления: ' + e.message);
+        }
+    }
+
+    // ========== КОПИРОВАНИЕ ССЫЛКИ ==========
+    function copyLink(text) {
+        navigator.clipboard.writeText(text).then(() => {
+            alert('✅ Ссылка скопирована:\n' + text);
+        }).catch(() => {
+            prompt('Скопируйте ссылку вручную:', text);
         });
-        closeModal('createModal');
-        renderServers();
-        updateConsoleSelect();
-        alert(`✅ Сервер «${name}» создан!\nРазмер: ${config.size}x${config.size}\nВайп: ${config.wipe === 0 ? 'без вайпа' : config.wipe + ' дней'}`);
     }
 
-    function closeModal(id) {
-        document.getElementById(id).classList.remove('active');
-    }
-
-    // ========== ИНИЦИАЛИЗАЦИЯ ==========
-    const savedUser = localStorage.getItem('york_hosting_user');
-    if (savedUser) {
-        currentUser = JSON.parse(savedUser);
-        showDashboard();
-    }
-    console.log('🏗️ York Hosting загружен!');
+    // ========== ЗАПУСК ==========
+    loadServers();
+    console.log('🏗️ York Hosting (без регистрации) загружен!');
 </script>
 </body>
 </html>
