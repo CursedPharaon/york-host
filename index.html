@@ -90,7 +90,6 @@
 <body>
 
 <div class="container" id="app">
-    <!-- ШАПКА -->
     <div id="header" class="hidden">
         <div class="logo">
             Y<span>O</span>RK <span style="font-size:14px;color:#4a6a4a;">hosting</span>
@@ -107,7 +106,6 @@
         </div>
     </div>
 
-    <!-- СТРАНИЦА ВХОДА -->
     <div id="loginPage">
         <div class="login-box">
             <h2>🔐 Вход в York Hosting</h2>
@@ -120,7 +118,6 @@
         </div>
     </div>
 
-    <!-- ПАНЕЛИ -->
     <div id="dashboard" class="hidden">
         <div id="tab-servers" class="panel active">
             <div id="serverList"></div>
@@ -199,73 +196,62 @@
 </div>
 
 <script>
-    // ==================== ДАННЫЕ ====================
+    // ==================== НАСТРОЙКИ ====================
+    const API_URL = 'https://york-server.onrender.com';
+
     let currentUser = null;
     let servers = [];
     let currentTariff = null;
 
-    // ==================== ИНИЦИАЛИЗАЦИЯ ====================
-    function init() {
-        const users = JSON.parse(localStorage.getItem('york_hosting_users') || '{}');
-        if (!users['cursed_pharaon']) {
-            users['cursed_pharaon'] = { password: 'lokaloka1472', balance: 500 };
-            localStorage.setItem('york_hosting_users', JSON.stringify(users));
-        }
-        servers = JSON.parse(localStorage.getItem('york_hosting_servers') || '[]');
-        if (servers.length === 0) {
-            servers.push({
-                id: 1,
-                name: 'York Wibe',
-                admin: 'cursed_pharaon',
-                size: 150,
-                wipe: 30,
-                tariff: 'free',
-                status: 'online',
-                owner: 'cursed_pharaon'
-            });
-            localStorage.setItem('york_hosting_servers', JSON.stringify(servers));
-        }
-        const savedUser = localStorage.getItem('york_hosting_current_user');
-        if (savedUser) {
-            currentUser = JSON.parse(savedUser);
-            showDashboard();
-        }
-    }
-
     // ==================== ВХОД ====================
-    function login() {
+    async function login() {
         const username = document.getElementById('loginUsername').value.trim();
         const password = document.getElementById('loginPassword').value.trim();
         if (!username || !password) {
             showLoginError('Заполните все поля');
             return;
         }
-        const users = JSON.parse(localStorage.getItem('york_hosting_users') || '{}');
-        const user = users[username];
-        if (!user || user.password !== password) {
-            showLoginError('Неверный логин или пароль');
-            return;
+        try {
+            const resp = await fetch(API_URL + '/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
+            const data = await resp.json();
+            if (data.success) {
+                currentUser = data.user;
+                localStorage.setItem('york_hosting_user', JSON.stringify(currentUser));
+                showDashboard();
+            } else {
+                showLoginError(data.error || 'Ошибка входа');
+            }
+        } catch (e) {
+            showLoginError('Сервер недоступен');
         }
-        currentUser = { username, balance: user.balance || 0 };
-        localStorage.setItem('york_hosting_current_user', JSON.stringify(currentUser));
-        showDashboard();
     }
 
-    function register() {
+    async function register() {
         const username = document.getElementById('loginUsername').value.trim();
         const password = document.getElementById('loginPassword').value.trim();
         if (!username || !password) {
             showLoginError('Заполните все поля');
             return;
         }
-        const users = JSON.parse(localStorage.getItem('york_hosting_users') || '{}');
-        if (users[username]) {
-            showLoginError('Пользователь уже существует');
-            return;
+        try {
+            const resp = await fetch(API_URL + '/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
+            const data = await resp.json();
+            if (data.success) {
+                showLoginError('✅ Регистрация успешна! Теперь войдите.', 'green');
+            } else {
+                showLoginError(data.error || 'Ошибка регистрации');
+            }
+        } catch (e) {
+            showLoginError('Сервер недоступен');
         }
-        users[username] = { password, balance: 0 };
-        localStorage.setItem('york_hosting_users', JSON.stringify(users));
-        showLoginError('✅ Регистрация успешна! Теперь войдите.', 'green');
     }
 
     function showLoginError(msg, color = '#c44') {
@@ -283,7 +269,7 @@
 
     function logout() {
         currentUser = null;
-        localStorage.removeItem('york_hosting_current_user');
+        localStorage.removeItem('york_hosting_user');
         document.getElementById('loginPage').classList.remove('hidden');
         document.getElementById('dashboard').classList.add('hidden');
         document.getElementById('header').classList.add('hidden');
@@ -295,18 +281,9 @@
         document.getElementById('dashboard').classList.remove('hidden');
         document.getElementById('header').classList.remove('hidden');
         document.getElementById('usernameDisplay').textContent = currentUser.username;
-        updateBalance();
-        renderServers();
-        updateConsoleSelect();
+        document.getElementById('balanceDisplay').textContent = currentUser.balance;
+        loadServers();
         setupTabs();
-    }
-
-    function updateBalance() {
-        const users = JSON.parse(localStorage.getItem('york_hosting_users') || '{}');
-        if (users[currentUser.username]) {
-            currentUser.balance = users[currentUser.username].balance || 0;
-            document.getElementById('balanceDisplay').textContent = currentUser.balance;
-        }
     }
 
     function setupTabs() {
@@ -326,10 +303,27 @@
     }
 
     // ==================== СЕРВЕРА ====================
+    async function loadServers() {
+        try {
+            const resp = await fetch(API_URL + '/get_servers', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user_id: currentUser.id })
+            });
+            const data = await resp.json();
+            if (data.success) {
+                servers = data.servers;
+                renderServers();
+                updateConsoleSelect();
+            }
+        } catch (e) {
+            console.error('Ошибка загрузки серверов:', e);
+        }
+    }
+
     function renderServers() {
         const list = document.getElementById('serverList');
-        const userServers = servers.filter(s => s.owner === currentUser.username);
-        if (userServers.length === 0) {
+        if (servers.length === 0) {
             list.innerHTML = `
                 <div class="empty-state">
                     <div class="big">🏗️</div>
@@ -339,7 +333,7 @@
             `;
             return;
         }
-        list.innerHTML = userServers.map(s => `
+        list.innerHTML = servers.map(s => `
             <div class="server-card">
                 <div>
                     <div class="name">🌐 ${s.name}</div>
@@ -348,8 +342,8 @@
                 <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
                     <span class="status ${s.status}"><span class="status-dot ${s.status}"></span>${s.status === 'online' ? 'Онлайн' : 'Офлайн'}</span>
                     <div class="actions">
-                        <button onclick="copyLink(${s.id})" style="background:#1a2a1a;border-color:#2a3a2a;color:#6a8a6a;" title="Скопировать ссылку на сервер">🔗</button>
-                        <button onclick="toggleServer(${s.id})">${s.status === 'online' ? '⏸️ Выключить' : '▶️ Включить'}</button>
+                        <button onclick="copyLink(${s.id})" style="background:#1a2a1a;border-color:#2a3a2a;color:#6a8a6a;" title="Скопировать ссылку">🔗</button>
+                        <button onclick="toggleServer(${s.id})">${s.status === 'online' ? '⏸️' : '▶️'}</button>
                         <button onclick="openConsoleTab(${s.id})">🖥️</button>
                         <button class="danger" onclick="deleteServer(${s.id})">🗑️</button>
                     </div>
@@ -367,19 +361,18 @@
         });
     }
 
-    function toggleServer(id) {
-        const server = servers.find(s => s.id === id && s.owner === currentUser.username);
+    async function toggleServer(id) {
+        const server = servers.find(s => s.id === id);
         if (!server) return;
-        server.status = server.status === 'online' ? 'offline' : 'online';
-        localStorage.setItem('york_hosting_servers', JSON.stringify(servers));
+        const newStatus = server.status === 'online' ? 'offline' : 'online';
+        // В реальности здесь нужно отправить запрос на сервер
+        server.status = newStatus;
         renderServers();
-        addConsoleLog(server.id, 'Система', `Сервер ${server.status === 'online' ? 'включён' : 'выключен'}`);
     }
 
-    function deleteServer(id) {
+    async function deleteServer(id) {
         if (!confirm('Удалить сервер? Все данные будут потеряны.')) return;
-        servers = servers.filter(s => !(s.id === id && s.owner === currentUser.username));
-        localStorage.setItem('york_hosting_servers', JSON.stringify(servers));
+        servers = servers.filter(s => s.id !== id);
         renderServers();
         updateConsoleSelect();
     }
@@ -396,10 +389,9 @@
     // ==================== КОНСОЛЬ ====================
     function updateConsoleSelect() {
         const select = document.getElementById('consoleServerSelect');
-        const userServers = servers.filter(s => s.owner === currentUser.username);
-        select.innerHTML = userServers.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
-        if (userServers.length > 0) {
-            select.value = userServers[0].id;
+        select.innerHTML = servers.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+        if (servers.length > 0) {
+            select.value = servers[0].id;
             loadConsole();
         } else {
             document.getElementById('consoleLog').innerHTML = '<div class="log-entry"><span class="system">[Система]</span> Нет серверов</div>';
@@ -447,9 +439,6 @@
         if (cmd.startsWith('/say ')) {
             const msg = cmd.replace('/say ', '');
             addConsoleLog(serverId, 'Сервер', `[Сообщение сервера] ${msg}`);
-        } else if (cmd.startsWith('/kick ')) {
-            const nick = cmd.replace('/kick ', '');
-            addConsoleLog(serverId, 'Сервер', `Игрок ${nick} был кикнут`);
         } else {
             addConsoleLog(serverId, 'Сервер', `Команда выполнена: ${cmd}`);
         }
@@ -471,47 +460,35 @@
         }
     }
 
-    function createServer() {
+    async function createServer() {
         const name = document.getElementById('createServerName').value.trim();
         const admin = document.getElementById('createAdminNick').value.trim();
         if (!name || !admin) {
             document.getElementById('createError').textContent = 'Заполните все поля';
             return;
         }
-        const configs = {
-            free: { size: 40, wipe: 7, price: 0 },
-            standard: { size: 150, wipe: 30, price: 79 },
-            premium: { size: 250, wipe: 0, price: 199 }
-        };
-        const config = configs[currentTariff];
-        if (currentTariff !== 'free') {
-            const users = JSON.parse(localStorage.getItem('york_hosting_users') || '{}');
-            if ((users[currentUser.username]?.balance || 0) < config.price) {
-                document.getElementById('createError').textContent = `Недостаточно средств. Нужно ${config.price} ₽`;
-                return;
+        try {
+            const resp = await fetch(API_URL + '/create_server', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    user_id: currentUser.id,
+                    server_name: name,
+                    admin_nick: admin,
+                    tariff: currentTariff
+                })
+            });
+            const result = await resp.json();
+            if (result.success) {
+                closeModal('createModal');
+                await loadServers();
+                alert(`✅ Сервер «${name}» создан!\nСсылка: https://york-game.onrender.com/play?server=${result.server_id}`);
+            } else {
+                document.getElementById('createError').textContent = result.error || 'Ошибка создания';
             }
-            users[currentUser.username].balance -= config.price;
-            localStorage.setItem('york_hosting_users', JSON.stringify(users));
-            currentUser.balance = users[currentUser.username].balance;
-            document.getElementById('balanceDisplay').textContent = currentUser.balance;
+        } catch (e) {
+            document.getElementById('createError').textContent = 'Сервер недоступен';
         }
-        const newServer = {
-            id: Date.now(),
-            name: name,
-            admin: admin,
-            size: config.size,
-            wipe: config.wipe,
-            tariff: currentTariff,
-            status: 'online',
-            owner: currentUser.username
-        };
-        servers.push(newServer);
-        localStorage.setItem('york_hosting_servers', JSON.stringify(servers));
-        closeModal('createModal');
-        renderServers();
-        updateConsoleSelect();
-        addConsoleLog(newServer.id, 'Система', `Сервер ${name} создан!`);
-        alert(`✅ Сервер «${name}» создан!\nРазмер: ${config.size}x${config.size}\nВайп: ${config.wipe === 0 ? 'без вайпа' : config.wipe + ' дней'}\n🔗 Ссылка: https://york-game.onrender.com/play?server=${newServer.id}`);
     }
 
     // ==================== МОДАЛКИ ====================
@@ -519,8 +496,12 @@
         document.getElementById(id).classList.remove('active');
     }
 
-    // ==================== ЗАПУСК ====================
-    init();
+    // ==================== ИНИЦИАЛИЗАЦИЯ ====================
+    const savedUser = localStorage.getItem('york_hosting_user');
+    if (savedUser) {
+        currentUser = JSON.parse(savedUser);
+        showDashboard();
+    }
     console.log('🏗️ York Hosting загружен!');
 </script>
 </body>
