@@ -241,22 +241,30 @@
         }
         try {
             const hashed = await sha256(password);
+            console.log('Введённый пароль (хэш):', hashed);
+            
             const result = await tursoQuery("SELECT username, password, is_admin FROM players WHERE username=?", [username]);
+            console.log('Результат запроса:', result);
+            
             if (!result.rows || result.rows.length === 0) {
                 showLoginError('Пользователь не найден');
                 return;
             }
-            if (result.rows[0][1] !== hashed) {
+            
+            const storedHash = result.rows[0][1];
+            console.log('Хэш из базы:', storedHash);
+            
+            if (storedHash !== hashed) {
                 showLoginError('Неверный логин или пароль');
                 return;
             }
-            // Проверяем баланс в hosting_users (если нет — создаём)
+            
+            // Проверяем баланс в hosting_users
             const balanceCheck = await tursoQuery("SELECT balance FROM hosting_users WHERE username=?", [username]);
             let balance = 0;
             if (balanceCheck.rows && balanceCheck.rows.length > 0) {
                 balance = balanceCheck.rows[0][0] || 0;
             } else {
-                // Создаём запись с балансом 0
                 await tursoQuery("INSERT INTO hosting_users (username, password, balance) VALUES (?, ?, 0)", [username, hashed]);
                 balance = 0;
             }
