@@ -101,6 +101,15 @@
         }
     }
 
+    // ========== ПОЛУЧИТЬ ПОСЛЕДНИЙ ID ==========
+    async function getLastInsertId() {
+        const result = await tursoQuery("SELECT seq FROM sqlite_sequence WHERE name='servers'");
+        if (result.rows && result.rows.length > 0) {
+            return result.rows[0][0];
+        }
+        return null;
+    }
+
     // ========== СОЗДАНИЕ СЕРВЕРА ==========
     async function createServer() {
         const name = document.getElementById('serverName').value.trim();
@@ -118,12 +127,27 @@
         }
         
         try {
-            // Вставляем сервер с явным ID (время + рандом)
-            const newId = Date.now() + Math.floor(Math.random() * 1000);
+            // Вставляем сервер
             await tursoQuery(
-                "INSERT INTO servers (id, name, admin, size, wipe_days, tariff) VALUES (?, ?, ?, ?, ?, ?)",
-                [newId, name, admin, size, wipe, size >= 200 ? 'premium' : size >= 150 ? 'standard' : 'free']
+                "INSERT INTO servers (name, admin, size, wipe_days, tariff) VALUES (?, ?, ?, ?, ?)",
+                [name, admin, size, wipe, size >= 200 ? 'premium' : size >= 150 ? 'standard' : 'free']
             );
+            
+            // Получаем ID через sqlite_sequence
+            let newId = await getLastInsertId();
+            
+            // Если не получилось - пробуем через MAX
+            if (!newId) {
+                const maxResult = await tursoQuery("SELECT MAX(id) FROM servers");
+                if (maxResult.rows && maxResult.rows.length > 0) {
+                    newId = maxResult.rows[0][0];
+                }
+            }
+            
+            // Если всё ещё null - ставим заглушку
+            if (!newId) {
+                newId = '✅ создан (обновите страницу для ID)';
+            }
             
             msg.className = 'success';
             msg.textContent = `✅ Сервер «${name}» создан! ID: ${newId}`;
