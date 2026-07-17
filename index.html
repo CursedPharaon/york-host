@@ -82,6 +82,8 @@
         .form-group input:focus,.form-group select:focus{border-color:#2a4a2a;outline:none}
         .btn-primary{background:#2a4a2a;border:1px solid #3a5a3a;color:#eee;padding:12px 24px;border-radius:8px;font-family:inherit;font-weight:bold;cursor:pointer;transition:0.2s;width:100%}
         .btn-primary:hover{background:#3a6a3a}
+        .copy-link{background:#1a2a1a;border:1px solid #2a3a2a;color:#6a8a6a;padding:4px 10px;border-radius:4px;cursor:pointer;font-family:inherit;font-size:12px;transition:0.2s}
+        .copy-link:hover{border-color:#3a5a3a;color:#aaa}
         @media(max-width:600px){.container{padding:14px}.logo{font-size:24px}.server-card{flex-direction:column;align-items:stretch}.server-card .actions{justify-content:center}.console-input{flex-direction:column}.tariffs-grid{grid-template-columns:1fr}}
     </style>
 </head>
@@ -346,13 +348,23 @@
                 <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
                     <span class="status ${s.status}"><span class="status-dot ${s.status}"></span>${s.status === 'online' ? 'Онлайн' : 'Офлайн'}</span>
                     <div class="actions">
+                        <button onclick="copyLink(${s.id})" style="background:#1a2a1a;border-color:#2a3a2a;color:#6a8a6a;" title="Скопировать ссылку на сервер">🔗</button>
                         <button onclick="toggleServer(${s.id})">${s.status === 'online' ? '⏸️ Выключить' : '▶️ Включить'}</button>
-                        <button onclick="openConsoleTab(${s.id})">🖥️ Консоль</button>
+                        <button onclick="openConsoleTab(${s.id})">🖥️</button>
                         <button class="danger" onclick="deleteServer(${s.id})">🗑️</button>
                     </div>
                 </div>
             </div>
         `).join('');
+    }
+
+    function copyLink(id) {
+        const link = `https://york-game.onrender.com/play?server=${id}`;
+        navigator.clipboard.writeText(link).then(() => {
+            alert(`✅ Ссылка скопирована!\n${link}`);
+        }).catch(() => {
+            prompt('Скопируйте ссылку вручную:', link);
+        });
     }
 
     function toggleServer(id) {
@@ -499,7 +511,7 @@
         renderServers();
         updateConsoleSelect();
         addConsoleLog(newServer.id, 'Система', `Сервер ${name} создан!`);
-        alert(`✅ Сервер «${name}» создан!\nРазмер: ${config.size}x${config.size}\nВайп: ${config.wipe === 0 ? 'без вайпа' : config.wipe + ' дней'}`);
+        alert(`✅ Сервер «${name}» создан!\nРазмер: ${config.size}x${config.size}\nВайп: ${config.wipe === 0 ? 'без вайпа' : config.wipe + ' дней'}\n🔗 Ссылка: https://york-game.onrender.com/play?server=${newServer.id}`);
     }
 
     // ==================== МОДАЛКИ ====================
@@ -510,7 +522,6 @@
     // ==================== ЗАПУСК ====================
     init();
     console.log('🏗️ York Hosting загружен!');
-    console.log('👤 Для входа используйте свой логин и пароль');
 </script>
 </body>
 </html>
