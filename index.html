@@ -88,7 +88,7 @@
 <body>
 
 <div class="container" id="app">
-    <!-- ШАПКА (после входа) -->
+    <!-- ШАПКА -->
     <div id="header" class="hidden">
         <div class="logo">
             Y<span>O</span>RK <span style="font-size:14px;color:#4a6a4a;">hosting</span>
@@ -109,8 +109,8 @@
     <div id="loginPage">
         <div class="login-box">
             <h2>🔐 Вход в York Hosting</h2>
-            <input id="loginUsername" placeholder="Никнейм" value="cursed_pharaon">
-            <input id="loginPassword" type="password" placeholder="Пароль" value="lokaloka1472">
+            <input id="loginUsername" placeholder="Никнейм">
+            <input id="loginPassword" type="password" placeholder="Пароль">
             <button onclick="login()">Войти</button>
             <button onclick="register()" style="background:#1a2a1a;border-color:#2a3a2a;margin-top:8px;">Зарегистрироваться</button>
             <div id="loginError" class="error"></div>
@@ -118,14 +118,11 @@
         </div>
     </div>
 
-    <!-- ПАНЕЛИ (после входа) -->
+    <!-- ПАНЕЛИ -->
     <div id="dashboard" class="hidden">
-        <!-- Сервера -->
         <div id="tab-servers" class="panel active">
             <div id="serverList"></div>
         </div>
-
-        <!-- Создать сервер -->
         <div id="tab-create" class="panel">
             <h3 style="color:#8a8;margin-bottom:12px;">🛒 Выберите тариф</h3>
             <div class="tariffs-grid">
@@ -148,39 +145,37 @@
                     <button onclick="showCreateForm('premium')">Купить</button>
                 </div>
             </div>
-            <div style="font-size:13px;color:#4a6a4a;text-align:center;">💳 Для платных тарифов — напишите в ВК или ТГ после создания</div>
+            <div style="font-size:13px;color:#4a6a4a;text-align:center;">💳 Для платных тарифов — напишите в ВК или ТГ</div>
         </div>
-
-        <!-- Консоль -->
         <div id="tab-console" class="panel">
             <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
                 <h3 style="color:#8a8;">🖥️ Консоль сервера</h3>
                 <select id="consoleServerSelect" style="background:#0a0f0a;border:1px solid #1a2a1a;color:#eee;padding:6px 12px;border-radius:6px;font-family:inherit;"></select>
             </div>
             <div class="console-box" id="consoleLog">
-                <div class="log-entry"><span class="time">[--:--:--]</span> <span class="system">[Система]</span> Выберите сервер для управления</div>
+                <div class="log-entry"><span class="time">[--:--:--]</span> <span class="system">[Система]</span> Выберите сервер</div>
             </div>
             <div class="console-input">
-                <input id="consoleInput" placeholder="Введите команду (/say текст, /kick ник)..." onkeydown="if(event.key==='Enter')sendConsoleCommand()">
+                <input id="consoleInput" placeholder="Команда (/say текст, /kick ник)" onkeydown="if(event.key==='Enter')sendConsoleCommand()">
                 <button onclick="sendConsoleCommand()">➤ Отправить</button>
             </div>
-            <div style="font-size:12px;color:#4a6a4a;margin-top:6px;">💡 /say [текст] — сообщение от сервера, /kick [ник] — кикнуть игрока</div>
+            <div style="font-size:12px;color:#4a6a4a;margin-top:6px;">💡 /say [текст] — сообщение от сервера, /kick [ник] — кикнуть</div>
         </div>
     </div>
 </div>
 
-<!-- МОДАЛКА СОЗДАНИЯ СЕРВЕРА -->
+<!-- МОДАЛКА СОЗДАНИЯ -->
 <div class="modal-overlay" id="createModal">
     <div class="modal">
         <h2 id="modalTitle">🏗️ Создание сервера</h2>
-        <div class="desc" id="modalDesc">Вы выбрали тариф «Бесплатный»</div>
+        <div class="desc" id="modalDesc"></div>
         <div class="form-group">
             <label>Название сервера</label>
             <input id="createServerName" placeholder="Например: York PvP">
         </div>
         <div class="form-group">
             <label>Ваш ник в игре (администратор)</label>
-            <input id="createAdminNick" placeholder="Ваш ник" value="cursed_pharaon">
+            <input id="createAdminNick" placeholder="Ваш ник">
         </div>
         <button class="btn-primary" onclick="createServer()">✅ Создать сервер</button>
         <button class="close-btn" onclick="closeModal('createModal')" style="margin-top:10px;">Закрыть</button>
@@ -188,11 +183,11 @@
     </div>
 </div>
 
-<!-- МОДАЛКА ОПЛАТЫ (только для платных) -->
+<!-- МОДАЛКА ОПЛАТЫ -->
 <div class="modal-overlay" id="paymentModal">
     <div class="modal">
         <h2>💳 Оплата</h2>
-        <div class="desc" id="paymentDesc">Вы выбрали тариф «Стандарт» на 79 ₽/мес</div>
+        <div class="desc" id="paymentDesc"></div>
         <div class="btn-group">
             <a href="https://vk.ru/kalashnikov3002" target="_blank" class="vk">✉️ Написать в ВК</a>
             <a href="https://t.me/cursed_pharaon" target="_blank" class="tg">✉️ Написать в Telegram</a>
@@ -203,24 +198,18 @@
 
 <script>
     // ==================== ДАННЫЕ ====================
-    // ВСЁ ХРАНИТСЯ В localStorage (для демо — без бэкенда)
-    // При желании можно подключить к Turso через API
-
     let currentUser = null;
     let servers = [];
     let currentTariff = null;
 
     // ==================== ИНИЦИАЛИЗАЦИЯ ====================
     function init() {
-        // Загружаем пользователей из localStorage
         const users = JSON.parse(localStorage.getItem('york_hosting_users') || '{}');
         if (!users['cursed_pharaon']) {
             users['cursed_pharaon'] = { password: 'lokaloka1472', balance: 500 };
             localStorage.setItem('york_hosting_users', JSON.stringify(users));
         }
-        // Загружаем сервера
         servers = JSON.parse(localStorage.getItem('york_hosting_servers') || '[]');
-        // Если нет серверов — создаём тестовый
         if (servers.length === 0) {
             servers.push({
                 id: 1,
@@ -234,7 +223,6 @@
             });
             localStorage.setItem('york_hosting_servers', JSON.stringify(servers));
         }
-        // Если уже залогинены — показываем дашборд
         const savedUser = localStorage.getItem('york_hosting_current_user');
         if (savedUser) {
             currentUser = JSON.parse(savedUser);
@@ -242,7 +230,7 @@
         }
     }
 
-    // ==================== ВХОД / РЕГИСТРАЦИЯ ====================
+    // ==================== ВХОД ====================
     function login() {
         const username = document.getElementById('loginUsername').value.trim();
         const password = document.getElementById('loginPassword').value.trim();
@@ -259,7 +247,6 @@
         currentUser = { username, balance: user.balance || 0 };
         localStorage.setItem('york_hosting_current_user', JSON.stringify(currentUser));
         showDashboard();
-        showLoginError('', '');
     }
 
     function register() {
@@ -386,7 +373,6 @@
     }
 
     function openConsoleTab(id) {
-        // Переключаем на вкладку консоли
         document.querySelectorAll('.tabs button').forEach(b => b.classList.remove('active'));
         document.querySelector('[data-tab="console"]').classList.add('active');
         document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
@@ -399,14 +385,12 @@
     function updateConsoleSelect() {
         const select = document.getElementById('consoleServerSelect');
         const userServers = servers.filter(s => s.owner === currentUser.username);
-        select.innerHTML = userServers.map(s => 
-            `<option value="${s.id}">${s.name}</option>`
-        ).join('');
+        select.innerHTML = userServers.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
         if (userServers.length > 0) {
             select.value = userServers[0].id;
             loadConsole();
         } else {
-            document.getElementById('consoleLog').innerHTML = '<div class="log-entry"><span class="system">[Система]</span> Нет серверов для управления</div>';
+            document.getElementById('consoleLog').innerHTML = '<div class="log-entry"><span class="system">[Система]</span> Нет серверов</div>';
         }
     }
 
@@ -414,13 +398,10 @@
         const select = document.getElementById('consoleServerSelect');
         const serverId = parseInt(select.value);
         if (!serverId) return;
-        const server = servers.find(s => s.id === serverId && s.owner === currentUser.username);
-        if (!server) return;
-        // Загружаем логи для этого сервера
         const logs = JSON.parse(localStorage.getItem('york_console_logs_' + serverId) || '[]');
         const logBox = document.getElementById('consoleLog');
         if (logs.length === 0) {
-            logBox.innerHTML = `<div class="log-entry"><span class="time">[--:--:--]</span> <span class="system">[Система]</span> Консоль сервера ${server.name}</div>`;
+            logBox.innerHTML = `<div class="log-entry"><span class="time">[--:--:--]</span> <span class="system">[Система]</span> Консоль готова</div>`;
             return;
         }
         logBox.innerHTML = logs.map(log => `
@@ -438,11 +419,8 @@
         logs.push({ time, type, message });
         if (logs.length > 100) logs.shift();
         localStorage.setItem('york_console_logs_' + serverId, JSON.stringify(logs));
-        // Если эта консоль открыта — обновляем
         const select = document.getElementById('consoleServerSelect');
-        if (parseInt(select.value) === serverId) {
-            loadConsole();
-        }
+        if (parseInt(select.value) === serverId) loadConsole();
     }
 
     function sendConsoleCommand() {
@@ -453,10 +431,7 @@
         const select = document.getElementById('consoleServerSelect');
         const serverId = parseInt(select.value);
         if (!serverId) return;
-        const server = servers.find(s => s.id === serverId && s.owner === currentUser.username);
-        if (!server) return;
         addConsoleLog(serverId, 'Система', `Выполнена команда: ${cmd}`);
-        // Обработка команд
         if (cmd.startsWith('/say ')) {
             const msg = cmd.replace('/say ', '');
             addConsoleLog(serverId, 'Сервер', `[Сообщение сервера] ${msg}`);
@@ -465,14 +440,6 @@
             addConsoleLog(serverId, 'Сервер', `Игрок ${nick} был кикнут`);
         } else {
             addConsoleLog(serverId, 'Сервер', `Команда выполнена: ${cmd}`);
-        }
-        // Если это сообщение от сервера — можно добавить в чат игры (имитация)
-        if (cmd.startsWith('/say ')) {
-            const msg = cmd.replace('/say ', '');
-            // Имитация отправки в игру (сохраняем в специальный лог)
-            const gameChat = JSON.parse(localStorage.getItem('york_game_chat_' + serverId) || '[]');
-            gameChat.push({ user: 'Сервер', msg: msg, time: new Date().toLocaleTimeString() });
-            localStorage.setItem('york_game_chat_' + serverId, JSON.stringify(gameChat));
         }
     }
 
@@ -485,12 +452,10 @@
         document.getElementById('modalDesc').textContent = `Вы выбрали тариф «${names[tariff]}» на ${prices[tariff]}`;
         document.getElementById('createError').textContent = '';
         document.getElementById('createModal').classList.add('active');
-        // Если бесплатный — показываем сразу форму, если платный — сначала оплата
         if (tariff !== 'free') {
             document.getElementById('createModal').classList.remove('active');
             document.getElementById('paymentDesc').textContent = `Вы выбрали тариф «${names[tariff]}» на ${prices[tariff]}`;
             document.getElementById('paymentModal').classList.add('active');
-            return;
         }
     }
 
@@ -507,20 +472,17 @@
             premium: { size: 250, wipe: 0, price: 199 }
         };
         const config = configs[currentTariff];
-        // Проверяем баланс для платных тарифов
         if (currentTariff !== 'free') {
             const users = JSON.parse(localStorage.getItem('york_hosting_users') || '{}');
             if ((users[currentUser.username]?.balance || 0) < config.price) {
                 document.getElementById('createError').textContent = `Недостаточно средств. Нужно ${config.price} ₽`;
                 return;
             }
-            // Списываем деньги
             users[currentUser.username].balance -= config.price;
             localStorage.setItem('york_hosting_users', JSON.stringify(users));
             currentUser.balance = users[currentUser.username].balance;
             document.getElementById('balanceDisplay').textContent = currentUser.balance;
         }
-        // Создаём сервер
         const newServer = {
             id: Date.now(),
             name: name,
@@ -533,23 +495,10 @@
         };
         servers.push(newServer);
         localStorage.setItem('york_hosting_servers', JSON.stringify(servers));
-        // Добавляем запись в основную таблицу (для игры)
-        const gameServers = JSON.parse(localStorage.getItem('york_game_servers') || '[]');
-        gameServers.push({
-            id: newServer.id,
-            name: name,
-            admin: admin,
-            size: config.size,
-            wipe: config.wipe,
-            tariff: currentTariff
-        });
-        localStorage.setItem('york_game_servers', JSON.stringify(gameServers));
         closeModal('createModal');
         renderServers();
         updateConsoleSelect();
-        // Лог
         addConsoleLog(newServer.id, 'Система', `Сервер ${name} создан!`);
-        // Уведомление
         alert(`✅ Сервер «${name}» создан!\nРазмер: ${config.size}x${config.size}\nВайп: ${config.wipe === 0 ? 'без вайпа' : config.wipe + ' дней'}`);
     }
 
@@ -558,10 +507,10 @@
         document.getElementById(id).classList.remove('active');
     }
 
-    // ==================== ИНИЦИАЛИЗАЦИЯ ====================
+    // ==================== ЗАПУСК ====================
     init();
     console.log('🏗️ York Hosting загружен!');
-    console.log('👤 Вход: cursed_pharaon / lokaloka1472');
+    console.log('👤 Для входа используйте свой логин и пароль');
 </script>
 </body>
 </html>
